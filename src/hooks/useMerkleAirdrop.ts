@@ -5,11 +5,12 @@ import MerkleAirdropABI from '../abi/MerkleAirdrop.json';
 import usersList from '../../users.json';
 import { StandardMerkleTree } from '@openzeppelin/merkle-tree';
 import { formatTokenAmount } from '@/utils/tokenUtils';
+import { toast } from 'react-toastify';
 
 const MERKLE_AIRDROP_ADDRESS = process.env.NEXT_PUBLIC_MERKLE_AIRDROP_ADDRESS!;
 
 export const useMerkleAirdrop = () => {
-    const { account } = useWallet();
+    const { account, provider } = useWallet();
     const [contract, setContract] = useState<ethers.Contract | null>(null);
     const [claimedAmount, setClaimedAmount] = useState<string>("0");
     const users = useMemo(() => usersList.users, []);
@@ -24,22 +25,26 @@ export const useMerkleAirdrop = () => {
 
     useEffect(() => {
         const initContract = async () => {
-            if (typeof window.ethereum !== 'undefined' && account) {
-                const provider = new ethers.BrowserProvider(window.ethereum);
-                const signer = await provider.getSigner();
-                const merkleAirdrop = new ethers.Contract(MERKLE_AIRDROP_ADDRESS, MerkleAirdropABI.abi, signer);
-                setContract(merkleAirdrop);
-                await updateClaimedAmount();
+            if (provider && MERKLE_AIRDROP_ADDRESS) {
+                try {
+                    const signer = await provider.getSigner();
+                    const merkleAirdrop = new ethers.Contract(MERKLE_AIRDROP_ADDRESS, MerkleAirdropABI.abi, signer);
+                    setContract(merkleAirdrop);
+                } catch (error: any) {
+                    toast.error('Error initializing Merkle Airdrop contract: ');
+                }
             }
         };
 
         initContract();
-    }, [account, updateClaimedAmount]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [provider]);
 
-    const findUser = (address: string): { ix: number, data: string[] } | null => {
-        let ix = users.findIndex(add => add[0] == address);
-        return ix !== -1 ? { ix, data: users[ix] } : null;
-    }    
+    useEffect(() => {
+        if (contract && account) {
+            updateClaimedAmount();
+        }
+    }, [contract, account, updateClaimedAmount]);
 
     const verifyEligibility = useCallback(async (proof: string[], totalAssigned: bigint) => {
         if (contract && account) {
@@ -54,19 +59,46 @@ export const useMerkleAirdrop = () => {
                 const tx = await contract.claimTokens(totalAssigned, amountToMint, proof);
                 await tx.wait();
                 await updateClaimedAmount();
-                return true;
+                toast.success('Tokens claimed successfully!');
             } catch (error: any) {
-                // Log the original error
-                console.error('Error claiming tokens:', error);
-                return false;
+                if (error.data) {
+                    // This is likely a custom error
+                    const decodedError = contract.interface.parseError(error.data);
+                    const decodedName = decodedError?.name ?? "";
+                    
+                    switch (decodedName) {
+                        case 'AmountMustBeGreaterThanZero':
+                            toast.error('Amount to claim must be greater than zero.');
+                            break;
+                        case 'InvalidProof':
+                            toast.error('Invalid proof. You may not be eligible for this airdrop.');
+                            break;
+                        case 'ClaimExceedsAssignedTokens':
+                            toast.error('Claim amount exceeds your assigned tokens.');
+                            break;
+                        case 'TransferFailed':
+                            toast.error('Token transfer failed. Please try again later.');
+                            break;
+                        case 'ContractPaused':
+                            toast.error('Contract is paused from claiming.');
+                            break;
+                        default:
+                            toast.error('An unknown error occurred.');
+                    }
+                }
             }
         }
-        return false;
-    }, [contract, account, updateClaimedAmount]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [contract, account]);
+
+    const findUser = (address: string): { ix: number, data: string[] } | null => {
+        let ix = users.findIndex(add => add[0] == address);
+        return ix !== -1 ? { ix, data: users[ix] } : null;
+    }
 
     return {
+        contract,
         claimedAmount,
-        updateClaimedAmount,
         verifyEligibility,
         claimTokens,
         findUser,

@@ -2,16 +2,21 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode, useRef } from 'react';
 import { ethers } from 'ethers';
+import { truncateAddress } from '@/utils/walletUtils';
 
 // Create a context for the wallet
 const WalletContext = createContext<{
   account: string | null;
+  provider: ethers.BrowserProvider | null;
   connectWallet: () => Promise<void>;
   disconnectWallet: () => void;
+  isCorrectAccount: boolean;
 }>({
   account: null,
+  provider: null,
   connectWallet: async () => {},
   disconnectWallet: () => {},
+  isCorrectAccount: false,
 });
 
 // Custom hook to use the wallet context
@@ -21,6 +26,7 @@ export const useWallet = () => useContext(WalletContext);
 export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [account, setAccount] = useState<string | null>(null);
   const [provider, setProvider] = useState<ethers.BrowserProvider | null>(null);
+  const [isCorrectAccount, setIsCorrectAccount] = useState(true);
 
   useEffect(() => {
     const initProvider = async () => {
@@ -54,6 +60,17 @@ export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     };
   }, []);
 
+  useEffect(() => {
+    const checkAccount = async () => {
+      if (typeof window.ethereum !== 'undefined' && account) {
+        const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+        setIsCorrectAccount(accounts[0]?.toLowerCase() === account.toLowerCase());
+      }
+    };
+
+    checkAccount();
+  }, [account]);
+
   const connectWallet = async () => {
     if (!provider) {
       alert('Please install MetaMask!');
@@ -61,10 +78,11 @@ export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     }
 
     try {
-      await provider.send('eth_requestAccounts', []);
-      const signer = await provider.getSigner();
-      const address = await signer.getAddress();
+      await window.ethereum.request({ method: 'wallet_requestPermissions', params: [{ eth_accounts: {} }] });
+      const accounts = await provider.send('eth_requestAccounts', []);
+      const address = accounts[0];
       setAccount(address);
+      setIsCorrectAccount(true);
     } catch (error) {
       console.error('Failed to connect wallet:', error);
     }
@@ -75,7 +93,7 @@ export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   };
 
   return (
-    <WalletContext.Provider value={{ account, connectWallet, disconnectWallet }}>
+    <WalletContext.Provider value={{ account, provider, connectWallet, disconnectWallet, isCorrectAccount }}>
       {children}
     </WalletContext.Provider>
   );
@@ -83,7 +101,7 @@ export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
 // WalletConnect component (optional, can be used to display connection status and buttons)
 const WalletConnect: React.FC = () => {
-  const { account, connectWallet, disconnectWallet } = useWallet();
+  const { account, connectWallet, disconnectWallet, isCorrectAccount } = useWallet();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -100,14 +118,13 @@ const WalletConnect: React.FC = () => {
     };
   }, []);
 
-  const truncateAddress = (address: string) => {
-    return `${address.slice(0, 6)}...${address.slice(-4)}`;
-  };
-
   return (
     <div className="relative" ref={dropdownRef}>
       {account ? (
         <>
+          {!isCorrectAccount && (
+            <p className="text-red-500 mb-2">Warning: Connected account doesn&apos;t match the selected account in MetaMask.</p>
+          )}
           <button
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
             className="flex items-center px-4 py-2 text-sm font-medium text-white transition-colors duration-300 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full hover:from-blue-600 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"

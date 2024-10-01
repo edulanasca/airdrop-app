@@ -7,14 +7,15 @@ import { useMerkleAirdrop } from "@/hooks/useMerkleAirdrop";
 
 const Main = () => {
     const { account } = useWallet();
-    const { findUser, updateClaimedAmount } = useMerkleAirdrop();
-    const [userData, setUserData] = useState<{ix: number, data: string[]} | null>(null);
+    const { findUser, claimTokens, claimedAmount, tree } = useMerkleAirdrop();
+    const [userData, setUserData] = useState<{ ix: number, data: string[] } | null>(null);
 
     useEffect(() => {
         if (account) {
-            updateClaimedAmount();
             setUserData(findUser(account));
         }
+        
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [account]);
 
     return (
@@ -30,7 +31,13 @@ const Main = () => {
                             : "You're not eligible to claim the airdrop."}
                     </p>
                 )}
-                <ClaimButton account={account} userData={userData} />
+                <ClaimButton
+                    account={account}
+                    userData={userData}
+                    claimTokens={claimTokens}
+                    claimedAmount={claimedAmount}
+                    tree={tree}
+                />
             </div>
         </main>
     )

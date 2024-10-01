@@ -4,9 +4,24 @@ import { useState } from 'react';
 import WalletConnect from "./WalletConnect";
 import Link from 'next/link';
 import Image from 'next/image';
+import { useSamoyedCoin } from '@/hooks/useSamoyedCoin';
+import { useWallet } from '@/components/WalletConnect';
+import { toast } from 'react-toastify';
 
 const Header = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const { account } = useWallet();
+    const { adminList, togglePause } = useSamoyedCoin();
+    const isAdmin = adminList.includes(account || '');
+
+    const handleTogglePause = async () => {
+        const success = await togglePause();
+        if (success) {
+            toast.success('Contract pause state toggled successfully');
+        } else {
+            toast.error('Failed to toggle contract pause state');
+        }
+    };
 
     return (
         <header className="bg-[#140f26] shadow-md">
@@ -39,9 +54,11 @@ const Header = () => {
                         <Link href="/stats" className="text-xl font-medium text-white hover:text-gray-400">
                             Stats
                         </Link>
-                        <Link href="/config" className="text-xl font-medium text-white hover:text-gray-400">
-                            Config
-                        </Link>
+                        {
+                            isAdmin ? <Link href="/config" className="text-xl font-medium text-white hover:text-gray-400">
+                                Config
+                            </Link> : null
+                        }
                     </nav>
 
                     {/* WalletConnect button */}
