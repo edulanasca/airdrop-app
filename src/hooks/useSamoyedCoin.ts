@@ -51,7 +51,7 @@ export const useSamoyedCoin = () => {
                 });
 
                 const admins = await Promise.all(adminPromises);
-                setAdminList(admins.filter((admin): admin is string => admin !== null));
+                setAdminList(admins.filter((admin): admin is string => admin !== null).map(it => it.toLowerCase()));
             } catch (error) {
                 console.error('Error updating admin list:', error);
             }

@@ -92,7 +92,7 @@ export const useMerkleAirdrop = () => {
     }, [contract, account]);
 
     const findUser = (address: string): { ix: number, data: string[] } | null => {
-        let ix = users.findIndex(add => add[0] == address);
+        let ix = users.findIndex(add => add[0].toLowerCase() == address.toLowerCase());
         return ix !== -1 ? { ix, data: users[ix] } : null;
     }
 

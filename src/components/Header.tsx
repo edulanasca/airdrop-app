@@ -6,22 +6,12 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useSamoyedCoin } from '@/hooks/useSamoyedCoin';
 import { useWallet } from '@/components/WalletConnect';
-import { toast } from 'react-toastify';
 
 const Header = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const { account } = useWallet();
     const { adminList, togglePause } = useSamoyedCoin();
-    const isAdmin = adminList.includes(account || '');
-
-    const handleTogglePause = async () => {
-        const success = await togglePause();
-        if (success) {
-            toast.success('Contract pause state toggled successfully');
-        } else {
-            toast.error('Failed to toggle contract pause state');
-        }
-    };
+    const isAdmin = adminList.includes(account?.toLowerCase() || '');
 
     return (
         <header className="bg-[#140f26] shadow-md">
