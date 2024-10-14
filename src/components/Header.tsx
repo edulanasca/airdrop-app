@@ -4,13 +4,13 @@ import { useState } from 'react';
 import WalletConnect from "./WalletConnect";
 import Link from 'next/link';
 import Image from 'next/image';
-import { useSamoyedCoin } from '@/hooks/useSamoyedCoin';
 import { useWallet } from '@/components/WalletConnect';
+import { useMerkleAirdrop } from '@/hooks/useMerkleAirdrop';
 
 const Header = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const { account } = useWallet();
-    const { adminList, togglePause } = useSamoyedCoin();
+    const { adminList } = useMerkleAirdrop();
     const isAdmin = adminList.includes(account?.toLowerCase() || '');
 
     return (

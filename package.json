@@ -13,7 +13,7 @@
   "dependencies": {
     "@openzeppelin/merkle-tree": "^1.0.7",
     "ethers": "^6.13.2",
-    "next": "14.2.7",
+    "next": "14.2.15",
     "react": "^18",
     "react-dom": "^18",
     "react-toastify": "^10.0.5",
