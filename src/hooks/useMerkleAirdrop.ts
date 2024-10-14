@@ -25,10 +25,13 @@ export const useMerkleAirdrop = () => {
     }, [contract, account]);
 
     const updateAdminList = useCallback(async () => {
-        if (contract) {
+        if (contract && provider) {
             try {
+                const currentBlock = await provider.getBlockNumber();
+                const fromBlock = Math.max(0, currentBlock - 1000);
+                
                 const filter = contract.filters.AdminAdded();
-                const events = await contract.queryFilter(filter) as ethers.EventLog[];
+                const events = await contract.queryFilter(filter, fromBlock) as ethers.EventLog[];
                 const addresses = events.map((event) => event.args![0].toLowerCase());
                 const uniqueAddresses = Array.from(new Set(addresses));
 
@@ -45,7 +48,7 @@ export const useMerkleAirdrop = () => {
                 console.error('Error updating admin list:', error);
             }
         }
-    }, [contract]);
+    }, [contract, provider]);
 
     useEffect(() => {
         const initContract = async () => {
