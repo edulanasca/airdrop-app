@@ -5,7 +5,6 @@ import { MerkleAirdrop } from '../abi/MerkleAirdrop';
 import usersList from '../../users.json';
 import { StandardMerkleTree } from '@openzeppelin/merkle-tree';
 import { formatTokenAmount } from '@/utils/tokenUtils';
-import adminsList from '../../admins.json';
 import { toast } from 'react-toastify';
 
 const MERKLE_AIRDROP_ADDRESS = process.env.NEXT_PUBLIC_MERKLE_AIRDROP_ADDRESS!;
@@ -28,8 +27,7 @@ export const useMerkleAirdrop = () => {
     const updateAdminList = useCallback(async () => {
         if (contract) {
             try {
-                // Start with the addresses from admins.json
-                const addressSet = new Set<string>(adminsList.map(it => it.toLowerCase()));
+                const addressSet = new Set<string>();
 
                 // Get AdminAdded and AdminRemoved events since the last block we checked
                 const lastCheckedBlock = localStorage.getItem('lastCheckedAdminBlock') || '0';
