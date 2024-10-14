@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { ethers } from 'ethers';
 import { useWallet } from '../components/WalletConnect';
-import MerkleAirdropABI from '../abi/MerkleAirdrop.json';
+import MerkleAirdropABI from '../../public/abi/MerkleAirdrop.json';
 import usersList from '../../users.json';
 import { StandardMerkleTree } from '@openzeppelin/merkle-tree';
 import { formatTokenAmount } from '@/utils/tokenUtils';

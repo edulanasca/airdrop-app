@@ -1,8 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { ethers } from 'ethers';
 import { useWallet } from '../components/WalletConnect';
-import SamoyedCoinABI from '../abi/SamoyedCoin.json';
-import adminsList from '../../admins.json';
+import SamoyedCoinABI from '../../public/abi/SamoyedCoin.json';
 import { toast } from 'react-toastify';
 
 const SAMOYEDCOIN_ADDRESS = process.env.NEXT_PUBLIC_SAMOYEDCOIN_ADDRESS!;
