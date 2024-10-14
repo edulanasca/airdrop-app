@@ -25,16 +25,20 @@ export const useMerkleAirdrop = () => {
     }, [contract, account]);
 
     const updateAdminList = useCallback(async () => {
-        if (contract) {
+        if (contract && provider) {
             try {
                 const addressSet = new Set<string>();
 
-                // Get AdminAdded and AdminRemoved events since the last block we checked
-                const lastCheckedBlock = localStorage.getItem('lastCheckedAdminBlock') || '0';
+                // Get the current block number
+                const currentBlock = await provider.getBlockNumber();
+
+                // Get the last checked block, or use (current block - 1000) if not available
+                const lastCheckedBlock = localStorage.getItem('lastCheckedAdminBlock') || (currentBlock - 1000).toString();
+
                 const filterAdded = contract.filters.AdminAdded();
                 const filterRemoved = contract.filters.AdminRemoved();
-                const eventsAdded = await contract.queryFilter(filterAdded, parseInt(lastCheckedBlock));
-                const eventsRemoved = await contract.queryFilter(filterRemoved, parseInt(lastCheckedBlock));
+                const eventsAdded = await contract.queryFilter(filterAdded, parseInt(lastCheckedBlock), currentBlock);
+                const eventsRemoved = await contract.queryFilter(filterRemoved, parseInt(lastCheckedBlock), currentBlock);
 
                 // Update the set based on events
                 eventsAdded.forEach(event => {
@@ -49,13 +53,7 @@ export const useMerkleAirdrop = () => {
                 });
 
                 // Update the last checked block
-                const latestBlock = Math.max(
-                    eventsAdded.length > 0 ? eventsAdded[eventsAdded.length - 1].blockNumber : 0,
-                    eventsRemoved.length > 0 ? eventsRemoved[eventsRemoved.length - 1].blockNumber : 0
-                );
-                if (latestBlock > 0) {
-                    localStorage.setItem('lastCheckedAdminBlock', latestBlock.toString());
-                }
+                localStorage.setItem('lastCheckedAdminBlock', currentBlock.toString());
 
                 // Check current admin status for each address
                 const adminPromises = Array.from(addressSet).map(async (address) => {
@@ -69,7 +67,7 @@ export const useMerkleAirdrop = () => {
                 console.error('Error updating admin list:', error);
             }
         }
-    }, [contract]);
+    }, [contract, provider]);
 
     useEffect(() => {
         const initContract = async () => {
