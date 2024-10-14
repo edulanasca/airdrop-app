@@ -6,6 +6,7 @@ import usersList from '../../users.json';
 import { StandardMerkleTree } from '@openzeppelin/merkle-tree';
 import { formatTokenAmount } from '@/utils/tokenUtils';
 import { toast } from 'react-toastify';
+import adminsList from '../../admins.json';
 
 const MERKLE_AIRDROP_ADDRESS = process.env.NEXT_PUBLIC_MERKLE_AIRDROP_ADDRESS!;
 
@@ -33,9 +34,10 @@ export const useMerkleAirdrop = () => {
                 const filter = contract.filters.AdminAdded();
                 const events = await contract.queryFilter(filter, fromBlock) as ethers.EventLog[];
                 const addresses = events.map((event) => event.args![0].toLowerCase());
-                const uniqueAddresses = Array.from(new Set(addresses));
+                // Include admins from admins.json
+                const allAddresses = Array.from(new Set([...adminsList.map(it => it.toLowerCase()), ...addresses]));
 
-                const adminStatusPromises = uniqueAddresses.map(async (address) => {
+                const adminStatusPromises = allAddresses.map(async (address) => {
                     const isAdmin = await contract.admins(address);
                     return isAdmin ? address : null;
                 });
