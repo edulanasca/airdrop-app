@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { ethers } from 'ethers';
 import { useWallet } from '../components/WalletConnect';
-import MerkleAirdropABI from '../../public/abi/MerkleAirdrop.json';
+import { MerkleAirdrop } from '../abi/MerkleAirdrop';
 import usersList from '../../users.json';
 import { StandardMerkleTree } from '@openzeppelin/merkle-tree';
 import { formatTokenAmount } from '@/utils/tokenUtils';
@@ -78,7 +78,7 @@ export const useMerkleAirdrop = () => {
             if (provider && MERKLE_AIRDROP_ADDRESS) {
                 try {
                     const signer = await provider.getSigner();
-                    const merkleAirdrop = new ethers.Contract(MERKLE_AIRDROP_ADDRESS, MerkleAirdropABI.abi, signer);
+                    const merkleAirdrop = new ethers.Contract(MERKLE_AIRDROP_ADDRESS, MerkleAirdrop.abi, signer);
                     setContract(merkleAirdrop);
                 } catch (error: any) {
                     toast.error('Error initializing Merkle Airdrop contract: ');

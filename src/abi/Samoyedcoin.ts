@@ -1,4 +1,4 @@
-{
+export const SamoyedCoin = {
   "_format": "hh-sol-artifact-1",
   "contractName": "Samoyedcoin",
   "sourceName": "contracts/SamoyedCoin.sol",

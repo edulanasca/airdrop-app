@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { ethers } from 'ethers';
 import { useWallet } from '../components/WalletConnect';
-import SamoyedCoinABI from '../../public/abi/SamoyedCoin.json';
+import { SamoyedCoin } from '../abi/Samoyedcoin';
 import { toast } from 'react-toastify';
 
 const SAMOYEDCOIN_ADDRESS = process.env.NEXT_PUBLIC_SAMOYEDCOIN_ADDRESS!;
@@ -29,7 +29,7 @@ export const useSamoyedCoin = () => {
             if (provider && SAMOYEDCOIN_ADDRESS) {
                 try {
                     const signer = await provider.getSigner();
-                    const samoyedCoin = new ethers.Contract(SAMOYEDCOIN_ADDRESS, SamoyedCoinABI.abi, signer);
+                    const samoyedCoin = new ethers.Contract(SAMOYEDCOIN_ADDRESS, SamoyedCoin.abi, signer);
                     setContract(samoyedCoin);
                 } catch (error: any) {
                     toast.error('Error initializing SamoyedCoin contract: ');

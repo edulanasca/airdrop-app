@@ -1,4 +1,4 @@
-{
+export const MerkleAirdrop = {
   "_format": "hh-sol-artifact-1",
   "contractName": "MerkleAirdrop",
   "sourceName": "contracts/MerkleAirdrop.sol",
