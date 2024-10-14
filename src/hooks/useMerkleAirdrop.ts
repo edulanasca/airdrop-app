@@ -25,49 +25,27 @@ export const useMerkleAirdrop = () => {
     }, [contract, account]);
 
     const updateAdminList = useCallback(async () => {
-        if (contract && provider) {
+        if (contract) {
             try {
-                const addressSet = new Set<string>();
+                const filter = contract.filters.AdminAdded();
+                const events = await contract.queryFilter(filter) as ethers.EventLog[];
+                const addresses = events.map((event) => event.args![0].toLowerCase());
+                const uniqueAddresses = Array.from(new Set(addresses));
 
-                // Get the current block number
-                const currentBlock = await provider.getBlockNumber();
-
-                // Get the last checked block, or use (current block - 1000) if not available
-                const lastCheckedBlock = localStorage.getItem('lastCheckedAdminBlock') || (currentBlock - 1000).toString();
-
-                const filterAdded = contract.filters.AdminAdded();
-                const filterRemoved = contract.filters.AdminRemoved();
-                const eventsAdded = await contract.queryFilter(filterAdded, parseInt(lastCheckedBlock), currentBlock);
-                const eventsRemoved = await contract.queryFilter(filterRemoved, parseInt(lastCheckedBlock), currentBlock);
-
-                // Update the set based on events
-                eventsAdded.forEach(event => {
-                    // @ts-ignore
-                    const [admin] = event.args!;
-                    addressSet.add(admin.toLowerCase());
-                });
-                eventsRemoved.forEach(event => {
-                    // @ts-ignore
-                    const [admin] = event.args!;
-                    addressSet.delete(admin.toLowerCase());
-                });
-
-                // Update the last checked block
-                localStorage.setItem('lastCheckedAdminBlock', currentBlock.toString());
-
-                // Check current admin status for each address
-                const adminPromises = Array.from(addressSet).map(async (address) => {
+                const adminStatusPromises = uniqueAddresses.map(async (address) => {
                     const isAdmin = await contract.admins(address);
                     return isAdmin ? address : null;
                 });
 
-                const admins = await Promise.all(adminPromises);
-                setAdminList(admins.filter((admin): admin is string => admin !== null));
+                const adminStatuses = await Promise.all(adminStatusPromises);
+                const currentAdmins = adminStatuses.filter((admin): admin is string => admin !== null);
+
+                setAdminList(currentAdmins);
             } catch (error) {
                 console.error('Error updating admin list:', error);
             }
         }
-    }, [contract, provider]);
+    }, [contract]);
 
     useEffect(() => {
         const initContract = async () => {
@@ -163,21 +141,6 @@ export const useMerkleAirdrop = () => {
         return false;
     }, [contract, updateAdminList]);
 
-    const setAdmin = useCallback(async (admin: string, isAdmin: boolean) => {
-        if (contract) {
-            try {
-                const tx = await contract.setAdmin(admin, isAdmin);
-                await tx.wait();
-                await updateAdminList();
-                return true;
-            } catch (error) {
-                console.error('Error setting admin status:', error);
-                return false;
-            }
-        }
-        return false;
-    }, [contract, updateAdminList]);
-
     const removeAdmin = useCallback(async (adminToRemove: string) => {
         if (contract) {
             try {
@@ -222,6 +185,5 @@ export const useMerkleAirdrop = () => {
         updateAdminList,
         addAdmin,
         removeAdmin,
-        setAdmin
     };
 };
