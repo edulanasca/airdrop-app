@@ -179,6 +179,21 @@ export const useMerkleAirdrop = () => {
         return ix !== -1 ? { ix, data: users[ix] } : null;
     }
 
+    const togglePause = useCallback(async () => {
+        if (contract) {
+            try {
+                const isPaused = await contract.paused();
+                const tx = isPaused ? await contract.unpause() : await contract.pause();
+                await tx.wait();
+                return true;
+            } catch (error) {
+                console.error('Error toggling pause state:', error);
+                return false;
+            }
+        }
+        return false;
+    }, [contract]);
+
     return {
         contract,
         claimedAmount,
@@ -190,5 +205,6 @@ export const useMerkleAirdrop = () => {
         updateAdminList,
         addAdmin,
         removeAdmin,
+        togglePause,
     };
 };

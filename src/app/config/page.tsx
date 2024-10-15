@@ -9,7 +9,7 @@ import { ethers } from 'ethers';
 
 const ConfigPage = () => {
   const { account } = useWallet();
-  const { contract, adminList, addAdmin } = useMerkleAirdrop();
+  const { contract, adminList, addAdmin, togglePause } = useMerkleAirdrop();
   const [isPaused, setIsPaused] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [newAdminAddress, setNewAdminAddress] = useState('');
@@ -33,7 +33,7 @@ const ConfigPage = () => {
     }
 
     try {
-      const success = await addAdmin(newAdminAddress);
+      const success = await togglePause();
       if (success) {
         setIsPaused(!isPaused);
         toast.success(`Contract ${isPaused ? 'unpaused' : 'paused'} successfully`);
