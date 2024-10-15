@@ -6,9 +6,11 @@ import { useSamoyedCoin } from '@/hooks/useSamoyedCoin';
 import { formatTokenAmount } from '@/utils/tokenUtils';
 import Header from '@/components/Header';
 import { truncateAddress } from '@/utils/walletUtils';
+import { useWallet } from '@/components/WalletConnect';
 
 const StatsPage = () => {
     const { contract: merkleAirdropContract } = useMerkleAirdrop();
+    const { provider } = useWallet();
     const { contract: tokenContract } = useSamoyedCoin();
     const [totalClaimed, setTotalClaimed] = useState<bigint>(BigInt(0));
     const [claimsByWallet, setClaimsByWallet] = useState<{ [key: string]: string }>({});
@@ -16,9 +18,17 @@ const StatsPage = () => {
 
     useEffect(() => {
         const fetchStats = async () => {
-            if (merkleAirdropContract && tokenContract) {
+            if (merkleAirdropContract && tokenContract && provider) {
                 const filter = merkleAirdropContract.filters.TokensClaimed();
-                const events = await merkleAirdropContract.queryFilter(filter);
+                
+                // Get the current block number
+                const currentBlock = await provider.getBlockNumber();
+                
+                // Calculate the start block (1000 blocks ago or 0 if less than 1000 blocks have passed)
+                const startBlock = Math.max(0, currentBlock - 1000);
+                
+                // Query events for the last 1000 blocks
+                const events = await merkleAirdropContract.queryFilter(filter, startBlock, currentBlock);
 
                 let total = BigInt(0);
                 const claims: { [key: string]: bigint } = {};
@@ -41,7 +51,7 @@ const StatsPage = () => {
         };
 
         fetchStats();
-    }, [merkleAirdropContract, tokenContract]);
+    }, [merkleAirdropContract, tokenContract, provider]);
 
     return (
         <div className='min-h-screen'>

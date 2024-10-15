@@ -6,14 +6,16 @@ import { useMerkleAirdrop } from '@/hooks/useMerkleAirdrop';
 import Header from '@/components/Header';
 import { toast, ToastContainer } from 'react-toastify';
 import { ethers } from 'ethers';
+import { truncateAddress } from '@/utils/walletUtils';
 
 const ConfigPage = () => {
   const { account } = useWallet();
-  const { contract, adminList, addAdmin, togglePause } = useMerkleAirdrop();
+  const { contract, adminList, addAdmin, togglePause, removeAdmin } = useMerkleAirdrop();
   const [isPaused, setIsPaused] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [newAdminAddress, setNewAdminAddress] = useState('');
   const [isAddingAdmin, setIsAddingAdmin] = useState(false);
+  const [isRemovingAdmin, setIsRemovingAdmin] = useState(false);
 
   useEffect(() => {
     const checkAdminAndPauseStatus = async () => {
@@ -76,6 +78,28 @@ const ConfigPage = () => {
     }
   };
 
+  const handleRemoveAdmin = async (adminAddress: string) => {
+    if (!isAdmin) {
+      toast.error("You don't have admin privileges to perform this action.");
+      return;
+    }
+
+    setIsRemovingAdmin(true);
+    try {
+      const success = await removeAdmin(adminAddress);
+      if (success) {
+        toast.success(`Admin ${adminAddress} removed successfully`);
+      } else {
+        toast.error('Failed to remove admin');
+      }
+    } catch (error) {
+      console.error('Error removing admin:', error);
+      toast.error('An error occurred while removing admin');
+    } finally {
+      setIsRemovingAdmin(false);
+    }
+  };
+
   return (
     <div className='min-h-screen'>
       <Header />
@@ -96,8 +120,8 @@ const ConfigPage = () => {
               {isPaused ? 'Unpause Contract' : 'Pause Contract'}
             </button>
 
-            <h3 className="text-lg font-semibold mb-2">Add New Admin</h3>
-            <form onSubmit={handleAddAdmin} className="flex flex-col space-y-4">
+            <h3 className="text-lg font-semibold mb-2 mt-6">Add New Admin</h3>
+            <form onSubmit={handleAddAdmin} className="flex flex-col space-y-4 mb-6">
               <input
                 type="text"
                 value={newAdminAddress}
@@ -115,6 +139,24 @@ const ConfigPage = () => {
                 {isAddingAdmin ? 'Adding Admin...' : 'Add Admin'}
               </button>
             </form>
+
+            <h3 className="text-lg font-semibold mb-2">Current Admins</h3>
+            <ul className="list-disc list-inside space-y-2">
+              {adminList.map((admin) => (
+                <li key={admin} className="flex items-center justify-between">
+                  <span>{truncateAddress(admin)}</span>
+                  {admin.toLowerCase() !== account?.toLowerCase() && (
+                    <button
+                      onClick={() => handleRemoveAdmin(admin)}
+                      disabled={isRemovingAdmin}
+                      className="text-red-500 hover:text-red-700 transition-colors duration-300"
+                    >
+                      Remove
+                    </button>
+                  )}
+                </li>
+              ))}
+            </ul>
           </div>
         ) : (
           <p className="text-xl">You do not have admin privileges to access this page.</p>
