@@ -13,6 +13,7 @@ const ConfigPage = () => {
   const [isPaused, setIsPaused] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [newAdminAddress, setNewAdminAddress] = useState('');
+  const [isAddingAdmin, setIsAddingAdmin] = useState(false);
 
   useEffect(() => {
     const checkAdminAndPauseStatus = async () => {
@@ -58,6 +59,7 @@ const ConfigPage = () => {
       return;
     }
 
+    setIsAddingAdmin(true);
     try {
       const success = await addAdmin(newAdminAddress);
       if (success) {
@@ -69,6 +71,8 @@ const ConfigPage = () => {
     } catch (error) {
       console.error('Error adding new admin:', error);
       toast.error('An error occurred while adding new admin');
+    } finally {
+      setIsAddingAdmin(false);
     }
   };
 
@@ -103,9 +107,12 @@ const ConfigPage = () => {
               />
               <button
                 type="submit"
-                className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors duration-300"
+                disabled={isAddingAdmin}
+                className={`px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors duration-300 ${
+                  isAddingAdmin ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
               >
-                Add Admin
+                {isAddingAdmin ? 'Adding Admin...' : 'Add Admin'}
               </button>
             </form>
           </div>
